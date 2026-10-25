@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block page_title %}System Overview{% endblock %}
+
+{% block content %}
+<div class="hero-banner">
+  <div class="hero-text">
+    <h2>🛡️ DefendAI Cyber Defense System</h2>
+    <p>Autonomous Red Team vs Blue Team simulation powered by Reinforcement Learning (PPO)</p>
+  </div>
+  <div class="hero-actions">
+    <a href="/simulation" class="btn btn-primary">⚡ Start Simulation</a>
+    <a href="/metrics"    class="btn btn-secondary">📊 View Metrics</a>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon">🎯</div>
+    <div class="kpi-value">{{ metrics.detection_rate | default('—') }}%</div>
+    <div class="kpi-label">Detection Rate</div>
+  </div>
+  <div class="kpi-card kpi-warn">
+    <div class="kpi-icon">⚠️</div>
+    <div class="kpi-value">{{ metrics.false_positive_rate | default('—') }}%</div>
+    <div class="kpi-label">False Positive Rate</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon">⏱️</div>
+    <div class="kpi-value">{{ metrics.avg_response_time | default('—') }}s</div>
+    <div class="kpi-label">Avg Response Time</div>
+  </div>
+  <div class="kpi-card kpi-good">
+    <div class="kpi-icon">💚</div>
+    <div class="kpi-value">{{ metrics.system_uptime_pct | default('—') }}%</div>
+    <div class="kpi-label">System Uptime</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon">📦</div>
+    <div class="kpi-value">{{ metrics.total_episodes | default(0) }}</div>
+    <div class="kpi-label">Total Episodes</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon">🔢</div>
+    <div class="kpi-value">{{ metrics.total_steps | default(0) }}</div>
+    <div class="kpi-label">Total Steps Logged</div>
+  </div>
+</div>
+
+<!-- Architecture Overview -->
+<div class="card-row">
+  <div class="card">
+    <h3>🔴 Red Team (Attacker)</h3>
+    <ul class="feature-list">
+      <li>🔍 Stage 0: Reconnaissance</li>
+      <li>📧 Stage 1: Phishing Attacks</li>
+      <li>🦠 Stage 2: Malware Propagation</li>
+      <li>🔑 Stage 3: Privilege Escalation</li>
+      <li>🌐 Stage 4: Lateral Movement</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>🔵 Blue Team (Defender — PPO)</h3>
+    <ul class="feature-list">
+      <li>🚫 Action 0: Do Nothing</li>
+      <li>🛑 Action 1: Block IP</li>
+      <li>🔒 Action 2: Isolate Node</li>
+      <li>🔄 Action 3: Reset System</li>
+      <li>👁️  Action 4: Increase Monitoring</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>📐 Reward Function</h3>
+    <ul class="feature-list reward-list">
+      <li class="reward-pos">+10 Successful mitigation</li>
+      <li class="reward-neg">−5  False positive</li>
+      <li class="reward-neg">−10 Successful attack</li>
+      <li class="reward-neg">−2  Unnecessary disruption</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Training Graph -->
+<div class="card full-width">
+  <h3>📈 Training Reward History</h3>
+  <canvas id="rewardChart" height="80"></canvas>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadRewardChart() {
+  const res  = await fetch('/api/reward-history');
+  const data = await res.json();
+  if (!data.length) return;
+
+  const labels  = data.map(d => `Ep ${d.episode_number}`);
+  const rewards = data.map(d => d.total_reward);
+
+  new Chart(document.getElementById('rewardChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Episode Reward',
+        data: rewards,
+        borderColor: '#4f8ef7',
+        backgroundColor: 'rgba(79,142,247,0.1)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true } },
+      scales: {
+        y: { title: { display: true, text: 'Total Reward' } },
+        x: { ticks: { maxTicksLimit: 15 } }
+      }
+    }
+  });
+}
+loadRewardChart();
+</script>
+{% endblock %}

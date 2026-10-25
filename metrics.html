@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Metrics{% endblock %}
+{% block header %}Metrics Dashboard{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+  <div class="kpi-card big">
+    <div class="kpi-label">Detection Rate</div>
+    <div class="kpi-value green">{{ "%.1f"|format((metrics.detection_rate or 0)*100) }}%</div>
+    <div class="kpi-sub">Threats correctly identified</div>
+  </div>
+  <div class="kpi-card big">
+    <div class="kpi-label">False Positive Rate</div>
+    <div class="kpi-value yellow">{{ "%.1f"|format((metrics.false_positive_rate or 0)*100) }}%</div>
+    <div class="kpi-sub">Benign flagged as threat</div>
+  </div>
+  <div class="kpi-card big">
+    <div class="kpi-label">Avg Response Time</div>
+    <div class="kpi-value blue">{{ "%.2f"|format(metrics.avg_response_time or 0) }}s</div>
+    <div class="kpi-sub">Time to mitigation</div>
+  </div>
+  <div class="kpi-card big">
+    <div class="kpi-label">System Uptime</div>
+    <div class="kpi-value green">{{ "%.1f"|format(metrics.system_uptime_pct or 0) }}%</div>
+    <div class="kpi-sub">Mean health over all steps</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="section-title">Reward Over Episodes</div>
+    <div class="chart-box"><canvas id="rewardChart"></canvas></div>
+  </div>
+  <div>
+    <div class="section-title">Defender Action Distribution</div>
+    <div class="chart-box"><canvas id="actionChart"></canvas></div>
+  </div>
+</div>
+
+{% if metrics %}
+<div class="section-title">Training Reward Plot</div>
+<div class="img-box">
+  <img src="{{ url_for('static', filename='training_reward.png') }}"
+       onerror="this.style.display='none'; document.getElementById('noplot').style.display='block'"
+       alt="Training Reward Curve" style="max-width:100%; border-radius:8px;"/>
+  <div id="noplot" style="display:none; color:#888; padding:24px;">
+    Run <code>python train.py</code> to generate the training plot.
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  loadRewardChart('rewardChart');
+  loadActionChart('actionChart');
+</script>
+{% endblock %}

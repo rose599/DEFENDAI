@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DefendAI – {% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar">
+    <div class="logo">
+      <span class="shield">🛡️</span>
+      <span>DefendAI</span>
+    </div>
+    <ul>
+      <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">
+        <span>🏠</span> Home</a></li>
+      <li><a href="/simulation" class="{% if request.path == '/simulation' %}active{% endif %}">
+        <span>⚡</span> Live Simulation</a></li>
+      <li><a href="/metrics" class="{% if request.path == '/metrics' %}active{% endif %}">
+        <span>📊</span> Metrics</a></li>
+      <li><a href="/logs" class="{% if request.path == '/logs' %}active{% endif %}">
+        <span>📋</span> Attack Logs</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <small>Academic Project<br/>Cybersecurity + RL</small>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-bar">
+      <h1>{% block header %}{% endblock %}</h1>
+      <div class="status-badge" id="globalStatus">● SYSTEM ONLINE</div>
+    </header>
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Live Simulation{% endblock %}
+{% block header %}Live Simulation{% endblock %}
+
+{% block content %}
+<div class="sim-controls">
+  <button id="btnStart" class="btn btn-green" onclick="startSim()">▶ Start Simulation</button>
+  <button id="btnStop"  class="btn btn-red"   onclick="stopSim()" disabled>■ Stop</button>
+  <span id="simStatus" class="status-text">Idle</span>
+</div>
+
+<!-- Live state cards -->
+<div class="kpi-grid" id="liveCards">
+  <div class="kpi-card">
+    <div class="kpi-label">Episode</div>
+    <div class="kpi-value" id="lv-episode">—</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Step</div>
+    <div class="kpi-value" id="lv-step">—</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Last Action</div>
+    <div class="kpi-value blue" id="lv-action">—</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Step Reward</div>
+    <div class="kpi-value" id="lv-reward">—</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">System Health</div>
+    <div class="kpi-value green" id="lv-health">—</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Compromised Nodes</div>
+    <div class="kpi-value red" id="lv-nodes">—</div>
+  </div>
+</div>
+
+<!-- Progress bars -->
+<div class="section-title">System State</div>
+<div class="progress-panel">
+  <div class="prog-row">
+    <label>System Health</label>
+    <div class="prog-bar-bg">
+      <div class="prog-bar green-bar" id="bar-health" style="width:100%"></div>
+    </div>
+    <span id="val-health">100%</span>
+  </div>
+  <div class="prog-row">
+    <label>Traffic Score</label>
+    <div class="prog-bar-bg">
+      <div class="prog-bar red-bar" id="bar-traffic" style="width:0%"></div>
+    </div>
+    <span id="val-traffic">0%</span>
+  </div>
+  <div class="prog-row">
+    <label>Active Alerts</label>
+    <div class="prog-bar-bg">
+      <div class="prog-bar yellow-bar" id="bar-alerts" style="width:0%"></div>
+    </div>
+    <span id="val-alerts">0</span>
+  </div>
+</div>
+
+<!-- Attack info -->
+<div class="section-title">Current Attack</div>
+<div class="attack-panel">
+  <div class="att-row"><span class="att-label">Stage:</span><span id="att-stage" class="att-val">—</span></div>
+  <div class="att-row"><span class="att-label">Target:</span><span id="att-target" class="att-val">—</span></div>
+  <div class="att-row"><span class="att-label">Payload:</span><span id="att-payload" class="att-val mono">—</span></div>
+</div>
+
+<!-- Live reward sparkline -->
+<div class="section-title">Live Reward Stream</div>
+<div class="chart-box">
+  <canvas id="liveRewardChart"></canvas>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let pollInterval = null;
+  const rewardHistory = [];
+  const liveChart = initLiveChart('liveRewardChart');
+
+  function startSim() {
+    fetch('/api/sim/start', {method:'POST'})
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('btnStart').disabled = true;
+        document.getElementById('btnStop').disabled = false;
+        document.getElementById('simStatus').textContent = '⚡ Running';
+        document.getElementById('simStatus').style.color = '#4caf50';
+        pollInterval = setInterval(pollStatus, 500);
+      });
+  }
+
+  function stopSim() {
+    fetch('/api/sim/stop', {method:'POST'})
+      .then(() => {
+        clearInterval(pollInterval);
+        document.getElementById('btnStart').disabled = false;
+        document.getElementById('btnStop').disabled = true;
+        document.getElementById('simStatus').textContent = '■ Stopped';
+        document.getElementById('simStatus').style.color = '#ef5350';
+      });
+  }
+
+  function pollStatus() {
+    fetch('/api/sim/status')
+      .then(r => r.json())
+      .then(d => {
+        if (!d.episode) return;
+        setText('lv-episode', d.episode);
+        setText('lv-step', d.step);
+        setText('lv-action', d.action || '—');
+        setColoredText('lv-reward', d.reward, d.reward >= 0 ? 'green' : 'red');
+        setColoredText('lv-health', (d.system_health*100).toFixed(1)+'%',
+                       d.system_health > 0.6 ? 'green' : 'red');
+        setColoredText('lv-nodes', d.compromised_nodes,
+                       d.compromised_nodes > 3 ? 'red' : 'green');
+
+        setBar('bar-health', 'val-health', d.system_health*100, true);
+        setBar('bar-traffic', 'val-traffic', d.traffic_score*100, false);
+        setBar('bar-alerts', 'val-alerts', (d.active_alerts/20)*100, false,
+               d.active_alerts + ' alerts');
+
+        setText('att-stage', d.attack_stage || '—');
+        setText('att-target', d.attack_target || '—');
+        setText('att-payload', d.attack_payload || '—');
+
+        rewardHistory.push(d.reward || 0);
+        if (rewardHistory.length > 60) rewardHistory.shift();
+        updateLiveChart(liveChart, rewardHistory);
+      });
+  }
+
+  function setText(id, val) {
+    document.getElementById(id).textContent = val;
+  }
+  function setColoredText(id, val, cls) {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    el.className = 'kpi-value ' + cls;
+  }
+  function setBar(barId, valId, pct, invert, label) {
+    const bar = document.getElementById(barId);
+    const val = document.getElementById(valId);
+    const clamped = Math.min(100, Math.max(0, pct));
+    bar.style.width = clamped + '%';
+    val.textContent = label || clamped.toFixed(1) + '%';
+    if (!invert) {
+      bar.className = 'prog-bar ' + (pct > 60 ? 'red-bar' : pct > 30 ? 'yellow-bar' : 'green-bar');
+    }
+  }
+</script>
+{% endblock %}

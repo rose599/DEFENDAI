@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block header %}System Overview{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Detection Rate</div>
+    <div class="kpi-value green">{{ "%.1f"|format((metrics.detection_rate or 0) * 100) }}%</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">False Positive Rate</div>
+    <div class="kpi-value yellow">{{ "%.1f"|format((metrics.false_positive_rate or 0) * 100) }}%</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">System Uptime</div>
+    <div class="kpi-value green">{{ "%.1f"|format(metrics.system_uptime_pct or 0) }}%</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Avg Response Time</div>
+    <div class="kpi-value blue">{{ "%.2f"|format(metrics.avg_response_time or 0) }}s</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Total Episodes</div>
+    <div class="kpi-value">{{ metrics.total_episodes or 0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Total Steps</div>
+    <div class="kpi-value">{{ metrics.total_steps or 0 }}</div>
+  </div>
+</div>
+
+<div class="section-title">Recent Episodes</div>
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Episode</th><th>Steps</th><th>Total Reward</th><th>Outcome</th><th>Timestamp</th></tr>
+    </thead>
+    <tbody>
+      {% for ep in episodes %}
+      <tr>
+        <td>{{ ep.id }}</td>
+        <td>{{ ep.episode }}</td>
+        <td>{{ ep.steps }}</td>
+        <td class="{% if ep.total_reward > 0 %}green{% else %}red{% endif %}">
+          {{ "%.2f"|format(ep.total_reward) }}</td>
+        <td><span class="badge badge-{{ ep.outcome }}">{{ ep.outcome }}</span></td>
+        <td>{{ ep.created_at }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="center muted">No episodes yet. Train the model first.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section-title">Reward History</div>
+<div class="chart-box">
+  <canvas id="rewardChart"></canvas>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="section-title">Action Distribution</div>
+    <div class="chart-box">
+      <canvas id="actionChart"></canvas>
+    </div>
+  </div>
+  <div>
+    <div class="section-title">Architecture</div>
+    <div class="arch-box">
+      <pre>
+ Red Team (Attacker)
+ ┌─────────────────┐
+ │ Recon → Phish   │
+ │ Malware → Priv  │
+ │ Lateral Move    │
+ └────────┬────────┘
+          │ attacks
+          ▼
+   CyberDefenseEnv
+   (Gym Environment)
+          │
+          │ state obs
+          ▼
+ Blue Team (Defender)
+ ┌─────────────────┐
+ │  PPO Agent      │
+ │  (SB3 / RL)     │
+ └────────┬────────┘
+          │ actions
+          ▼
+     SQLite + Flask
+      Dashboard
+      </pre>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  loadRewardChart('rewardChart');
+  loadActionChart('actionChart');
+</script>
+{% endblock %}

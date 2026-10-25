@@ -1,0 +1,20 @@
+# DefendAI Requirements
+# Python 3.10+
+
+# RL Framework
+gymnasium==0.29.1
+stable-baselines3==2.3.2
+
+# Web Dashboard
+flask==3.0.3
+
+# Data & Plotting
+numpy==1.26.4
+matplotlib==3.8.4
+
+# PyTorch (CPU) – SB3 dependency
+# If you have a GPU, replace with the appropriate CUDA build
+torch==2.2.2
+
+# Utility (SB3 needs this)
+cloudpickle==3.0.0

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Attack Logs{% endblock %}
+{% block header %}Attack Event Logs{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+  <input type="text" id="logFilter" placeholder="🔍  Filter logs..." oninput="filterTable()" />
+  <button class="btn btn-blue" onclick="location.reload()">↻ Refresh</button>
+</div>
+
+<div class="table-wrapper">
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>ID</th><th>Episode</th><th>Step</th><th>Stage</th>
+        <th>Attack Type</th><th>Target Node</th><th>Payload</th>
+        <th>Success</th><th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.id }}</td>
+        <td>{{ log.episode }}</td>
+        <td>{{ log.step }}</td>
+        <td>{{ log.stage_name }}</td>
+        <td>{{ log.attack_type }}</td>
+        <td><span class="mono">{{ log.target_node }}</span></td>
+        <td class="mono small">{{ log.payload }}</td>
+        <td>
+          {% if log.success %}
+            <span class="badge badge-attacker_win">✗ Success</span>
+          {% else %}
+            <span class="badge badge-defender_win">✓ Blocked</span>
+          {% endif %}
+        </td>
+        <td>{{ log.created_at }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" class="center muted">
+        No attack events logged yet. Start the simulation first.
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function filterTable() {
+    const q = document.getElementById('logFilter').value.toLowerCase();
+    document.querySelectorAll('#logTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}
